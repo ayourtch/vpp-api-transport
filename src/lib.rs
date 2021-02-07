@@ -5,6 +5,8 @@ mod tests {
         assert_eq!(2 + 2, 4);
     }
 }
+#[macro_use]
+extern crate lazy_static;
 
 #[macro_use]
 mod macros;
@@ -18,4 +20,5 @@ pub trait VppApiTransport {
     fn get_table_max_index(&mut self) -> u16;
 
     fn ping(&mut self) -> bool;
+    fn dump(&self);
 }

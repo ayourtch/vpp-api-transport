@@ -15,6 +15,7 @@ name = "vpp-api-transport-test"
 path = "src/vpp-api-transport-test.rs"
 
 [dependencies]
+lazy_static = "*"
 
 
 

@@ -3,23 +3,35 @@ use shmem_bindgen::*;
 
 use crate::VppApiTransport;
 
+use std::sync::{Arc, Mutex};
+
+#[derive(Debug, Default)]
+struct GlobalState {
+    created: bool,
+    receive_buffer: Vec<u8>,
+}
+
+lazy_static! {
+    static ref GLOBAL: Arc<Mutex<GlobalState>> = {
+        let mut gs = GlobalState {
+            ..Default::default()
+        };
+
+        Arc::new(Mutex::new(gs))
+    };
+}
+
 #[no_mangle]
-pub unsafe extern "C" fn shmem_default_cb(data: *mut u8, len: i32) {
+pub unsafe extern "C" fn shmem_default_cb(raw_data: *const u8, len: i32) {
+    let data_slice = unsafe { std::slice::from_raw_parts(raw_data, len as usize) };
+    let mut gs = GLOBAL.lock().unwrap();
+    gs.receive_buffer.extend_from_slice(data_slice);
+
     println!("Got {} bytes of data", len);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn vac_callback_async(data: *mut u8, len: i32) {
-    println!("async Got {} bytes of data", len);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn vac_callback_sync(data: *mut u8, len: i32) {
-    println!("sync Got {} bytes of data", len);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn vac_error_handler(arg: *mut u8, msg: *mut u8, msg_len: i32) {
+pub unsafe extern "C" fn vac_error_handler(arg: *const u8, msg: *const u8, msg_len: i32) {
     println!("Error: {} bytes of message", msg_len);
 }
 
@@ -29,8 +41,27 @@ pub struct Transport {
 
 impl Transport {
     pub fn new() -> Self {
+        let mut gs = GLOBAL.lock().unwrap();
+        if gs.created {
+            panic!("One transport already created!");
+        }
+
+        gs.created = true;
+
         unsafe { vac_mem_init(0) };
         Transport { connected: false }
+    }
+}
+
+impl std::io::Write for Transport {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let wr_len = buf.len();
+        let err = unsafe { vac_write(buf.as_ptr(), wr_len as i32) };
+        Ok(wr_len)
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        // no-op
+        Ok(())
     }
 }
 
@@ -41,12 +72,12 @@ impl VppApiTransport for Transport {
         let name_c = CString::new(name).unwrap();
         let chroot_prefix_c = chroot_prefix.map(|x| CString::new(x).unwrap());
 
-        let name_arg = name_c.as_ptr() as *mut i8;
+        let name_arg = name_c.as_ptr();
         let chroot_prefix_arg = if let Some(p) = chroot_prefix_c {
             p.as_ptr()
         } else {
             std::ptr::null_mut()
-        } as *mut i8;
+        };
         let err =
             unsafe { vac_connect(name_arg, chroot_prefix_arg, Some(shmem_default_cb), rx_qlen) };
         if err == 0 {
@@ -68,27 +99,12 @@ impl VppApiTransport for Transport {
         0
     }
     fn ping(&mut self) -> bool {
-        let err = unsafe { vac_write(cstr_mut!("\x02\x4d234556789b123456789c123456789d123"), 32) };
+        use std::io::Write;
+        self.write(b"\x02\x4d234556789b123456789c123456789d123");
         true
     }
-}
-
-pub fn shmem_test() {
-    unsafe {
-        println!("VAC connecting...");
-        vac_mem_init(32000000);
-        let err = vac_connect(
-            cstr_mut!("test-rust-api"),
-            std::ptr::null_mut(),
-            Some(shmem_default_cb),
-            32,
-        );
-        println!("connect result: {}", err);
-        for i in 1..3 {
-            let err = vac_write(cstr_mut!("\x02\x4d234556789b123456789c123456789d123"), 32);
-            println!("write result: {}", err);
-            std::thread::sleep(std::time::Duration::from_secs(1));
-        }
-        std::thread::sleep(std::time::Duration::from_secs(10));
+    fn dump(&self) {
+        let mut gs = GLOBAL.lock().unwrap();
+        println!("Global state: {:?}", &gs);
     }
 }
