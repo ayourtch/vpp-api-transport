@@ -7,6 +7,8 @@ fn main() {
     println!("Connect result: {}", t.connect("api-test", None, 32));
     println!("ping 1");
     t.ping();
+    t.ping();
+    t.ping();
     std::thread::sleep(std::time::Duration::from_secs(1));
     t.dump();
     println!("Disconnecting 1");

@@ -1,4 +1,6 @@
 mod shmem_bindgen;
+use bincode;
+use serde::{Deserialize, Serialize};
 use shmem_bindgen::*;
 
 use crate::VppApiTransport;
@@ -21,10 +23,25 @@ lazy_static! {
     };
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct SockMsgHeader {
+    _q: u64,
+    msglen: u32,
+    gc_mark: u32,
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn shmem_default_cb(raw_data: *const u8, len: i32) {
     let data_slice = unsafe { std::slice::from_raw_parts(raw_data, len as usize) };
     let mut gs = GLOBAL.lock().unwrap();
+
+    let hdr = SockMsgHeader {
+        _q: 0,
+        msglen: data_slice.len() as u32,
+        gc_mark: 0,
+    };
+    let hs = bincode::serialize(&hdr).unwrap();
+    gs.receive_buffer.extend_from_slice(&hs);
     gs.receive_buffer.extend_from_slice(data_slice);
 
     println!("Got {} bytes of data", len);
