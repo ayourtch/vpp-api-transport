@@ -52,6 +52,7 @@ impl VppApiTransport for Transport {
         if err == 0 {
             self.connected = true;
         }
+        println!("Returning {}", err);
         return err;
     }
     fn disconnect(&mut self) {
