@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::os::unix::net::UnixStream;
 
 use crate::VppApiTransport;
+use std::collections::HashMap;
 
 use crate::get_encoder;
 use std::collections::VecDeque;
@@ -39,6 +40,8 @@ pub struct Transport {
     connected: bool,
     sock_path: String,
     sock: Option<std::os::unix::net::UnixStream>,
+    message_name_to_id: HashMap<String, u16>,
+    message_max_index: u16,
 }
 
 impl Transport {
@@ -54,6 +57,8 @@ impl Transport {
             connected: false,
             sock_path: path.to_owned(),
             sock: None,
+            message_name_to_id: HashMap::new(),
+            message_max_index: 0,
         }
     }
 }
@@ -92,6 +97,23 @@ pub struct MsgSockClntCreate {
     name: u8_64,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MsgSockClntCreateReplyHdr {
+    _vl_msg_id: u16,
+    client_index: u32,
+    context: u32,
+    response: i32,
+    index: u32,
+    count: u16,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MsgSockClntCreateReplyEntry {
+    index: u16,
+    #[serde(with = "BigArray")]
+    name: u8_64,
+}
+
 impl VppApiTransport for Transport {
     fn connect(&mut self, name: &str, chroot_prefix: Option<&str>, rx_qlen: i32) -> i32 {
         use std::io::Write;
@@ -120,7 +142,22 @@ impl VppApiTransport for Transport {
 
             let mut s = self.sock.as_ref().unwrap();
             self.write(&scs);
-            self.read_one_msg();
+            let buf = self.read_one_msg();
+            let hdr: MsgSockClntCreateReplyHdr = get_encoder().deserialize(&buf[0..20]).unwrap();
+            println!("Table: {:?}", &hdr);
+            let mut i = 0;
+            self.message_max_index = hdr.count;
+            while i < hdr.count as usize {
+                let sz = 66; /* MsgSockClntCreateReplyEntry */
+                let ofs1 = 20 + i * 66;
+                let ofs2 = ofs1 + sz;
+
+                let msg: MsgSockClntCreateReplyEntry =
+                    get_encoder().deserialize(&buf[ofs1..ofs2]).unwrap();
+                let msg_name = String::from_utf8_lossy(&msg.name);
+                self.message_name_to_id.insert(msg_name.into(), msg.index);
+                i = i + 1;
+            }
 
             return 0;
         }
