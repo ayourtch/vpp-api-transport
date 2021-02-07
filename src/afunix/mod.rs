@@ -5,6 +5,7 @@ use std::os::unix::net::UnixStream;
 
 use crate::VppApiTransport;
 
+use crate::get_encoder;
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 
@@ -38,12 +39,6 @@ pub struct Transport {
     connected: bool,
     sock_path: String,
     sock: Option<std::os::unix::net::UnixStream>,
-}
-
-fn get_encoder() -> impl bincode::config::Options {
-    bincode::DefaultOptions::new()
-        .with_big_endian()
-        .with_fixint_encoding()
 }
 
 impl Transport {
@@ -125,6 +120,7 @@ impl VppApiTransport for Transport {
 
             let mut s = self.sock.as_ref().unwrap();
             self.write(&scs);
+            self.read_one_msg();
 
             return 0;
         }
