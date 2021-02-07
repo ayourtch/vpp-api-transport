@@ -5,12 +5,13 @@ use shmem_bindgen::*;
 
 use crate::VppApiTransport;
 
+use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Default)]
 struct GlobalState {
     created: bool,
-    receive_buffer: Vec<u8>,
+    receive_buffer: VecDeque<u8>,
 }
 
 lazy_static! {
@@ -41,10 +42,12 @@ pub unsafe extern "C" fn shmem_default_cb(raw_data: *const u8, len: i32) {
         gc_mark: 0,
     };
     let hs = bincode::serialize(&hdr).unwrap();
-    gs.receive_buffer.extend_from_slice(&hs);
-    gs.receive_buffer.extend_from_slice(data_slice);
-
-    println!("Got {} bytes of data", len);
+    for d in hs {
+        gs.receive_buffer.push_back(d);
+    }
+    for d in data_slice {
+        gs.receive_buffer.push_back(*d);
+    }
 }
 
 #[no_mangle]
@@ -70,6 +73,17 @@ impl Transport {
     }
 }
 
+impl std::io::Read for Transport {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        let mut gs = GLOBAL.lock().unwrap();
+        let mut count = 0;
+        while count < buf.len() && gs.receive_buffer.len() > 0 {
+            buf[count] = gs.receive_buffer.pop_front().unwrap();
+            count = count + 1
+        }
+        Ok(count)
+    }
+}
 impl std::io::Write for Transport {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let wr_len = buf.len();
