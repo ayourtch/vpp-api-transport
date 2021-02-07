@@ -10,6 +10,7 @@ extern crate lazy_static;
 
 #[macro_use]
 mod macros;
+pub mod afunix;
 pub mod shmem;
 
 pub trait VppApiTransport {
