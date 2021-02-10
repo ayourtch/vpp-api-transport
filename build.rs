@@ -3,9 +3,27 @@ extern crate bindgen;
 use std::env;
 use std::path::PathBuf;
 
+fn find_vpp_lib_dir() -> String {
+    /*
+     * In the future there's more cleverness possibly to be added.
+     * For now this will do.
+     */
+    let path = "/usr/lib/x86_64-linux-gnu/".to_string();
+    path
+}
+
 fn main() {
+    let vpp_lib_dir = match env::var("VPP_LIB_DIR") {
+        Ok(val) => val,
+        Err(_e) => find_vpp_lib_dir(),
+    };
+    if !std::path::Path::new(&format!("{}/libvppapiclient.so", &vpp_lib_dir)).exists() {
+        panic!("Can not find libvppapiclient.so at {}, please install python3-vpp-api or define VPP_LIB_DIR accordingly", vpp_lib_dir)
+    }
+    let flags = format!("cargo:rustc-flags=-L{} -lvppapiclient", &vpp_lib_dir);
+
     // Tell cargo to tell rustc to link the VPP client library
-    println!("cargo:rustc-flags=-L../../vpp/build-root/install-vpp-native/vpp/lib/ -lvppapiclient");
+    println!("{}", flags);
 
     let bindings = bindgen::Builder::default()
         .header("src/shmem_wrapper.h")
