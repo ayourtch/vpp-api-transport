@@ -3,6 +3,10 @@ name = "vpp-api-transport"
 version = "0.1.0"
 authors = ["Andrew Yourtchenko <ayourtch@gmail.com>"]
 edition = "2018"
+description = "fd.io VPP API transport over shared memory and sockets"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ayourtch/vpp-api-transport"
+homepage = "https://wiki.fd.io/view/VPP"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -15,11 +19,11 @@ name = "vpp-api-transport-test"
 path = "src/vpp-api-transport-test.rs"
 
 [dependencies]
-lazy_static = "*"
+lazy_static = "1.4.0"
 serde = { version = "1.0", features = ["derive"] }
 bincode = "1.2.1"
 
 
 
 [build-dependencies]
-bindgen = "*"
+bindgen = "0.57.0"
