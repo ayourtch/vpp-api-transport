@@ -15,6 +15,7 @@ pub mod shmem;
 use bincode;
 use bincode::Options;
 use serde::{Deserialize, Serialize};
+use std::io::{Read, Write};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SockMsgHeader {
@@ -29,7 +30,7 @@ fn get_encoder() -> impl bincode::config::Options {
         .with_fixint_encoding()
 }
 
-pub trait VppApiTransport: std::io::Read {
+pub trait VppApiTransport: Read + Write {
     fn connect(&mut self, name: &str, chroot_prefix: Option<&str>, rx_qlen: i32) -> i32;
     fn disconnect(&mut self);
 
