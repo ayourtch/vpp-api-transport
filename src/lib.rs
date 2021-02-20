@@ -41,7 +41,7 @@ pub trait VppApiTransport: Read + Write {
     fn ping(&mut self) -> bool;
     fn dump(&self);
 
-    fn read_one_msg(&mut self) -> Vec<u8> {
+    fn read_one_msg_into(&mut self, data: &mut Vec<u8>) {
         let mut header_buf = [0; 16];
 
         self.read(&mut header_buf).unwrap();
@@ -49,15 +49,21 @@ pub trait VppApiTransport: Read + Write {
 
         let target_size = hdr.msglen as usize;
 
-        let mut data: Vec<u8> = vec![0; target_size];
+        data.resize(target_size, 0);
         let mut got = 0;
         while got < target_size {
             let n = self.read(&mut data[got..target_size]).unwrap();
             println!("Got: {}, n: {}, target_size: {}", got, n, target_size);
             got = got + n;
         }
-        data
     }
+
+    fn read_one_msg(&mut self) -> Vec<u8> {
+        let mut out: Vec<u8> = vec![];
+        self.read_one_msg_into(&mut out);
+        out
+    }
+
     fn read_one_msg_id_and_msg(&mut self) -> (u16, Vec<u8>) {
         let ret = self.read_one_msg();
         let msg_id: u16 = ((ret[0] as u16) << 8) + (ret[1] as u16);
