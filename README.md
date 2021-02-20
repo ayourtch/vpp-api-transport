@@ -11,6 +11,26 @@ in place where you would use a regular socket in your code.
 
 # Prerequisites
 
+## Rust and OS dependencies
+
+### Rust
+
+As per https://www.rust-lang.org/tools/install:
+
+```
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+### OS dependencies
+
+On Ubuntu:
+
+```
+sudo apt-get install build-essential libclang-10-dev
+```
+
+### VPP client libraries
+
 ## Option 1 - your local development VPP tree at arbitrary location
 
 Define the environment variable *VPP_LIB_DIR* to point to the folder where
@@ -27,7 +47,13 @@ the package *python3-vpp-api*, cargo build will find the library there.
 # Usage
 
 See the src/vpp-api-transport-test.rs, more and better docs will
-come as we go :-)
+come as we go :-) There is no point to document much here yet,
+as the interfaces will change.
 
+# Running *cargo test*
+
+```
+sudo apt-get install vpp vpp-plugin-core python3-vpp-api
+```
 
 

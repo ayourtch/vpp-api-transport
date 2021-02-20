@@ -1,10 +1,3 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
 #[macro_use]
 extern crate lazy_static;
 
@@ -84,5 +77,28 @@ pub trait VppApiTransport: Read + Write {
             }
             Err(e) => Err(e),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::afunix;
+    use crate::shmem;
+    use crate::VppApiTransport;
+
+    #[test]
+    fn test_shmem_connect() {
+        let mut t1 = shmem::Transport::new();
+        let res = t1.connect("test", None, 32);
+        assert_eq!(res, 0);
+        t1.disconnect();
+    }
+
+    #[test]
+    fn test_afunix_connect() {
+        let mut t1 = afunix::Transport::new("/run/vpp/api.sock");
+        let res = t1.connect("test", None, 32);
+        assert_eq!(res, 0);
+        t1.disconnect();
     }
 }
