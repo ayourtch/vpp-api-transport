@@ -1,0 +1,34 @@
+name: Retouch Release Notes
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Run Tests'
+
+
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Install the VPP for testing
+      run: |
+        curl -s https://packagecloud.io/install/repositories/fdio/master/script.deb.sh | sudo bash
+        sudo apt-get install vpp vpp-plugin-core python3-vpp-api
+    - name: Build and test the code
+      run: |
+        cargo test
+
