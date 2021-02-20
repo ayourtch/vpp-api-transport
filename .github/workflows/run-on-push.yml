@@ -1,4 +1,4 @@
-name: Retouch Release Notes
+name: Basic tests
 
 on:
   push:
