@@ -2,8 +2,8 @@
 
 This is a Rust library for interfacing with the VPP API. 
 
-WARNING: quite likely the interfaces may change. This version is
-to test things out and encourage the feedback.
+WARNING: quite likely the interfaces may change. This version
+(until at least 0.2.0) is to test things out and encourage the feedback.
 
 The idea is to have entity that implements Read and Write traits,
 as well as eventually AsRawFd. This should allow to use this
