@@ -154,7 +154,8 @@ impl VppApiTransport for Transport {
 
                 let msg: MsgSockClntCreateReplyEntry =
                     get_encoder().deserialize(&buf[ofs1..ofs2]).unwrap();
-                let msg_name = String::from_utf8_lossy(&msg.name);
+                let msg_name_trailing_zero = String::from_utf8_lossy(&msg.name);
+                let msg_name = msg_name_trailing_zero.trim_right_matches("\u{0}");
                 self.message_name_to_id.insert(msg_name.into(), msg.index);
                 i = i + 1;
             }
