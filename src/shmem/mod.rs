@@ -1,5 +1,6 @@
 mod shmem_bindgen;
 use bincode;
+use bincode::Options;
 use serde::{Deserialize, Serialize};
 use shmem_bindgen::*;
 
@@ -31,6 +32,12 @@ struct SockMsgHeader {
     gc_mark: u32,
 }
 
+fn get_encoder() -> impl bincode::config::Options {
+    bincode::DefaultOptions::new()
+        .with_big_endian()
+        .with_fixint_encoding()
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn shmem_default_cb(raw_data: *const u8, len: i32) {
     let data_slice = unsafe { std::slice::from_raw_parts(raw_data, len as usize) };
@@ -41,7 +48,7 @@ pub unsafe extern "C" fn shmem_default_cb(raw_data: *const u8, len: i32) {
         msglen: data_slice.len() as u32,
         gc_mark: 0,
     };
-    let hs = bincode::serialize(&hdr).unwrap();
+    let hs = get_encoder().serialize(&hdr).unwrap();
     for d in hs {
         gs.receive_buffer.push_back(d);
     }
