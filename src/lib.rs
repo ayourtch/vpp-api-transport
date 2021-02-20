@@ -57,4 +57,9 @@ pub trait VppApiTransport: Read + Write {
         }
         data
     }
+    fn read_one_msg_id_and_msg(&mut self) -> (u16, Vec<u8>) {
+        let ret = self.read_one_msg();
+        let msg_id: u16 = ((ret[0] as u16) << 8) + (ret[1] as u16);
+        (msg_id, ret[2..].to_vec())
+    }
 }
