@@ -49,11 +49,12 @@ pub trait VppApiTransport: Read + Write {
 
         let target_size = hdr.msglen as usize;
 
-        let mut data: Vec<u8> = vec![];
-        while data.len() < target_size {
-            let mut buf = [0; 65536];
-            let n = self.read(&mut buf).unwrap();
-            data.extend_from_slice(&mut buf[0..n]);
+        let mut data: Vec<u8> = vec![0; target_size];
+        let mut got = 0;
+        while got < target_size {
+            let n = self.read(&mut data[got..target_size]).unwrap();
+            println!("Got: {}, n: {}, target_size: {}", got, n, target_size);
+            got = got + n;
         }
         data
     }
