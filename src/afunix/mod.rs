@@ -144,7 +144,7 @@ impl VppApiTransport for Transport {
 
             let mut s = self.sock.as_ref().unwrap();
             self.write(&scs);
-            let buf = self.read_one_msg();
+            let buf = self.read_one_msg().unwrap();
             let hdr: MsgSockClntCreateReplyHdr = get_encoder().deserialize(&buf[0..20]).unwrap();
             self.client_index = hdr.index as u32;
             println!("Table: {:?}", &hdr);

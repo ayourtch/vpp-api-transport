@@ -30,6 +30,11 @@ fn get_encoder() -> impl bincode::config::Options {
         .with_fixint_encoding()
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub enum Error {
+    NoDataAvailable,
+}
+
 pub trait VppApiTransport: Read + Write {
     fn connect(&mut self, name: &str, chroot_prefix: Option<&str>, rx_qlen: i32) -> i32;
     fn disconnect(&mut self);
@@ -41,7 +46,7 @@ pub trait VppApiTransport: Read + Write {
     fn ping(&mut self) -> bool;
     fn dump(&self);
 
-    fn read_one_msg_into(&mut self, data: &mut Vec<u8>) {
+    fn read_one_msg_into(&mut self, data: &mut Vec<u8>) -> Result<(), Error> {
         let mut header_buf = [0; 16];
 
         self.read(&mut header_buf).unwrap();
@@ -56,17 +61,28 @@ pub trait VppApiTransport: Read + Write {
             println!("Got: {}, n: {}, target_size: {}", got, n, target_size);
             got = got + n;
         }
+        Ok(())
     }
 
-    fn read_one_msg(&mut self) -> Vec<u8> {
+    fn read_one_msg(&mut self) -> Result<Vec<u8>, Error> {
         let mut out: Vec<u8> = vec![];
-        self.read_one_msg_into(&mut out);
-        out
+        match self.read_one_msg_into(&mut out) {
+            Ok(()) => Ok(out),
+            Err(e) => Err(e),
+        }
     }
 
-    fn read_one_msg_id_and_msg(&mut self) -> (u16, Vec<u8>) {
-        let ret = self.read_one_msg();
-        let msg_id: u16 = ((ret[0] as u16) << 8) + (ret[1] as u16);
-        (msg_id, ret[2..].to_vec())
+    fn read_one_msg_id_and_msg(&mut self) -> Result<(u16, Vec<u8>), Error> {
+        match self.read_one_msg() {
+            Ok(ret) => {
+                if ret.len() == 0 {
+                    Err(Error::NoDataAvailable)
+                } else {
+                    let msg_id: u16 = ((ret[0] as u16) << 8) + (ret[1] as u16);
+                    Ok((msg_id, ret[2..].to_vec()))
+                }
+            }
+            Err(e) => Err(e),
+        }
     }
 }
