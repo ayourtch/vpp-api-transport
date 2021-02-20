@@ -42,6 +42,7 @@ pub struct Transport {
     sock: Option<std::os::unix::net::UnixStream>,
     message_name_to_id: HashMap<String, u16>,
     message_max_index: u16,
+    client_index: u32,
 }
 
 impl Transport {
@@ -59,6 +60,7 @@ impl Transport {
             sock: None,
             message_name_to_id: HashMap::new(),
             message_max_index: 0,
+            client_index: 0,
         }
     }
 }
@@ -144,6 +146,7 @@ impl VppApiTransport for Transport {
             self.write(&scs);
             let buf = self.read_one_msg();
             let hdr: MsgSockClntCreateReplyHdr = get_encoder().deserialize(&buf[0..20]).unwrap();
+            self.client_index = hdr.index as u32;
             println!("Table: {:?}", &hdr);
             let mut i = 0;
             self.message_max_index = hdr.count;
@@ -170,6 +173,9 @@ impl VppApiTransport for Transport {
             self.sock = None;
             self.connected = false;
         }
+    }
+    fn get_client_index(&mut self) -> u32 {
+        self.client_index
     }
     fn get_msg_index(&mut self, name: &str) -> u16 {
         *self.message_name_to_id.get(name).unwrap()

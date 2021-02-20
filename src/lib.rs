@@ -36,6 +36,7 @@ pub trait VppApiTransport: Read + Write {
 
     fn get_msg_index(&mut self, name: &str) -> u16;
     fn get_table_max_index(&mut self) -> u16;
+    fn get_client_index(&mut self) -> u32;
 
     fn ping(&mut self) -> bool;
     fn dump(&self);

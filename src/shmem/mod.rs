@@ -131,6 +131,10 @@ impl VppApiTransport for Transport {
             self.connected = false;
         }
     }
+
+    fn get_client_index(&mut self) -> u32 {
+        0
+    }
     fn get_msg_index(&mut self, name: &str) -> u16 {
         let name_c = CString::new(name).unwrap();
         let id = unsafe { vac_get_msg_index(name_c.as_ptr() as *const u8) };
