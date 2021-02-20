@@ -27,6 +27,9 @@ jobs:
       run: |
         curl -s https://packagecloud.io/install/repositories/fdio/master/script.deb.sh | sudo bash
         sudo apt-get install vpp vpp-plugin-core python3-vpp-api
+        sudo chmod 777 /dev/shm/global_vm
+        sudo chmod 777 /dev/shm/vpe-api
+        sudo chmod 777 /run/vpp/*.sock
     - name: Build and test the code
       run: |
         cargo test
