@@ -23,9 +23,25 @@ fn get_encoder() -> impl bincode::config::Options {
         .with_fixint_encoding()
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum Error {
     NoDataAvailable,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct RawControlPing {
+    _vl_msg_id: u16,
+    client_index: u32,
+    context: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RawControlPingReply {
+    _vl_msg_id: u16,
+    context: u32,
+    retval: i32,
+    client_index: u32,
+    vpe_pid: u32,
 }
 
 pub trait VppApiTransport: Read + Write {
@@ -36,7 +52,35 @@ pub trait VppApiTransport: Read + Write {
     fn get_table_max_index(&mut self) -> u16;
     fn get_client_index(&mut self) -> u32;
 
-    fn ping(&mut self) -> bool;
+    fn control_ping(&mut self) -> u32 {
+        let control_ping_id = self.get_msg_index("control_ping_51077d14");
+        use std::io::Write;
+        let context = 42; // FIXME: use atomic autoincrementing
+        let msg = RawControlPing {
+            _vl_msg_id: control_ping_id,
+            client_index: self.get_client_index(),
+            context,
+        };
+        let data = get_encoder().serialize(&msg).unwrap();
+        self.write(&data);
+        context
+    }
+
+    fn skip_to_control_ping_reply(&mut self, context: u32) -> Result<(), Error> {
+        let control_ping_reply_id = self.get_msg_index("control_ping_reply_f6b0b8ca");
+        loop {
+            match self.read_one_msg_id_and_msg() {
+                Err(e) => return Err(e),
+                Ok((msg_id, data)) => {
+                    if msg_id == control_ping_reply_id {
+                        // FIXME: deserialize and match the context
+                        return Ok(());
+                    }
+                }
+            }
+        }
+    }
+
     fn dump(&self);
 
     fn read_one_msg_into(&mut self, data: &mut Vec<u8>) -> Result<(), Error> {
@@ -92,6 +136,7 @@ mod tests {
         let res = t1.connect("test", None, 32);
         assert_eq!(res, 0);
         t1.disconnect();
+        drop(t1);
     }
 
     #[test]
@@ -99,6 +144,10 @@ mod tests {
         let mut t1 = afunix::Transport::new("/run/vpp/api.sock");
         let res = t1.connect("test", None, 32);
         assert_eq!(res, 0);
+        let context = t1.control_ping();
+        let res = t1.skip_to_control_ping_reply(context);
+        assert_eq!(res, Ok(()));
         t1.disconnect();
+        drop(t1);
     }
 }

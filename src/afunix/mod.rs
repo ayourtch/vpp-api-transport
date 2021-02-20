@@ -183,11 +183,6 @@ impl VppApiTransport for Transport {
     fn get_table_max_index(&mut self) -> u16 {
         0
     }
-    fn ping(&mut self) -> bool {
-        use std::io::Write;
-        self.write(b"\x02\x4d234556789b123456789c123456789d123");
-        true
-    }
     fn dump(&self) {
         let mut gs = GLOBAL.lock().unwrap();
         println!("Global state: {:?}", &gs);
