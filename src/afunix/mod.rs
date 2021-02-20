@@ -171,7 +171,7 @@ impl VppApiTransport for Transport {
         }
     }
     fn get_msg_index(&mut self, name: &str) -> u16 {
-        0
+        *self.message_name_to_id.get(name).unwrap()
     }
     fn get_table_max_index(&mut self) -> u16 {
         0

@@ -3,6 +3,7 @@ use bincode;
 use bincode::Options;
 use serde::{Deserialize, Serialize};
 use shmem_bindgen::*;
+use std::ffi::CString;
 
 use crate::VppApiTransport;
 
@@ -131,7 +132,10 @@ impl VppApiTransport for Transport {
         }
     }
     fn get_msg_index(&mut self, name: &str) -> u16 {
-        0
+        let name_c = CString::new(name).unwrap();
+        let id = unsafe { vac_get_msg_index(name_c.as_ptr() as *const u8) };
+        // FIXME this needs to become a Result
+        id as u16
     }
     fn get_table_max_index(&mut self) -> u16 {
         0
