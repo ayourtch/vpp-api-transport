@@ -14,7 +14,8 @@ in place where you would use a regular socket in your code.
 ## Option 1 - your local development VPP tree at arbitrary location
 
 Define the environment variable *VPP_LIB_DIR* to point to the folder where
-the file *libvppapiclient.so* is located.
+the file *libvppapiclient.so* is located. You might also have to set the
+*LD_LIBRARY_PATH* to the same location as well.
 
 
 ## Option 2 - VPP client from packagecloud.io:
