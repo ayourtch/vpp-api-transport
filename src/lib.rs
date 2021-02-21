@@ -23,11 +23,6 @@ fn get_encoder() -> impl bincode::config::Options {
         .with_fixint_encoding()
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub enum Error {
-    NoDataAvailable,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct RawControlPing {
     _vl_msg_id: u16,
@@ -160,7 +155,7 @@ pub trait VppApiTransport: Read + Write {
         context
     }
 
-    fn skip_to_control_ping_reply(&mut self, context: u32) -> Result<(), Error> {
+    fn skip_to_control_ping_reply(&mut self, context: u32) -> std::io::Result<()> {
         let control_ping_reply_id = self.get_msg_index("control_ping_reply_f6b0b8ca").unwrap();
         loop {
             match self.read_one_msg_id_and_msg() {
@@ -175,7 +170,7 @@ pub trait VppApiTransport: Read + Write {
         }
     }
 
-    fn run_cli_inband(&mut self, cmd: &str) -> Result<String, Error> {
+    fn run_cli_inband(&mut self, cmd: &str) -> std::io::Result<String> {
         use std::io::Write;
 
         let cli_inband_id = self.get_msg_index("cli_inband_f8377302").unwrap();
@@ -194,8 +189,11 @@ pub trait VppApiTransport: Read + Write {
 
         loop {
             match self.read_one_msg_id_and_msg() {
-                Err(Error::NoDataAvailable) => { /* busy-loop */ }
-                Err(e) => return Err(e),
+                Err(e) => {
+                    if e.kind() != std::io::ErrorKind::WouldBlock {
+                        return Err(e);
+                    }
+                }
                 Ok((msg_id, data)) => {
                     if msg_id == cli_inband_reply_id {
                         // println!("Message: {:?}", &data);
@@ -214,10 +212,10 @@ pub trait VppApiTransport: Read + Write {
 
     fn dump(&self);
 
-    fn read_one_msg_into(&mut self, data: &mut Vec<u8>) -> Result<(), Error> {
+    fn read_one_msg_into(&mut self, data: &mut Vec<u8>) -> std::io::Result<()> {
         let mut header_buf = [0; 16];
 
-        self.read(&mut header_buf).unwrap();
+        self.read(&mut header_buf)?;
         let hdr: SockMsgHeader = get_encoder().deserialize(&header_buf[..]).unwrap();
 
         let target_size = hdr.msglen as usize;
@@ -232,26 +230,16 @@ pub trait VppApiTransport: Read + Write {
         Ok(())
     }
 
-    fn read_one_msg(&mut self) -> Result<Vec<u8>, Error> {
+    fn read_one_msg(&mut self) -> std::io::Result<Vec<u8>> {
         let mut out: Vec<u8> = vec![];
-        match self.read_one_msg_into(&mut out) {
-            Ok(()) => Ok(out),
-            Err(e) => Err(e),
-        }
+        self.read_one_msg_into(&mut out)?;
+        Ok(out)
     }
 
-    fn read_one_msg_id_and_msg(&mut self) -> Result<(u16, Vec<u8>), Error> {
-        match self.read_one_msg() {
-            Ok(ret) => {
-                if ret.len() == 0 {
-                    Err(Error::NoDataAvailable)
-                } else {
-                    let msg_id: u16 = ((ret[0] as u16) << 8) + (ret[1] as u16);
-                    Ok((msg_id, ret[2..].to_vec()))
-                }
-            }
-            Err(e) => Err(e),
-        }
+    fn read_one_msg_id_and_msg(&mut self) -> std::io::Result<(u16, Vec<u8>)> {
+        let ret = self.read_one_msg()?;
+        let msg_id: u16 = ((ret[0] as u16) << 8) + (ret[1] as u16);
+        Ok((msg_id, ret[2..].to_vec()))
     }
 }
 
