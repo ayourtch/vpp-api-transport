@@ -136,8 +136,6 @@ impl VppApiTransport for Transport {
         chroot_prefix: Option<&str>,
         rx_qlen: i32,
     ) -> std::io::Result<()> {
-        use std::ffi::CString;
-
         let name_c = CString::new(name).unwrap();
         let chroot_prefix_c = chroot_prefix.map(|x| CString::new(x).unwrap());
 

@@ -44,7 +44,7 @@ enum VarLen32 {
     VarLenData(Vec<u8>),
 }
 
-use serde::ser::{SerializeSeq, SerializeTuple, Serializer};
+use serde::ser::{SerializeTuple, Serializer};
 
 impl Serialize for VarLen32 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -72,7 +72,7 @@ impl Serialize for VarLen32 {
     }
 }
 
-use serde::de::{self, Deserializer, SeqAccess, Visitor};
+use serde::de::{Deserializer, SeqAccess, Visitor};
 use std::fmt;
 
 impl<'de> Deserialize<'de> for VarLen32 {
@@ -148,7 +148,6 @@ pub trait VppApiTransport: Read + Write {
 
     fn control_ping(&mut self) -> std::io::Result<u32> {
         let control_ping_id = self.get_msg_index("control_ping_51077d14").unwrap();
-        use std::io::Write;
         let context = self.get_next_context();
         let msg = RawControlPing {
             _vl_msg_id: control_ping_id,

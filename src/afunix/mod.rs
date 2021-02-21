@@ -89,14 +89,14 @@ impl std::io::Write for Transport {
     }
 }
 
-type u8_64 = [u8; 64];
+type ArrayOf64U8 = [u8; 64];
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MsgSockClntCreate {
     _vl_msg_id: u16,
     context: u32,
     #[serde(with = "BigArray")]
-    name: u8_64,
+    name: ArrayOf64U8,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -113,7 +113,7 @@ pub struct MsgSockClntCreateReplyHdr {
 pub struct MsgSockClntCreateReplyEntry {
     index: u16,
     #[serde(with = "BigArray")]
-    name: u8_64,
+    name: ArrayOf64U8,
 }
 
 impl VppApiTransport for Transport {
@@ -159,7 +159,7 @@ impl VppApiTransport for Transport {
             let msg: MsgSockClntCreateReplyEntry =
                 get_encoder().deserialize(&buf[ofs1..ofs2]).unwrap();
             let msg_name_trailing_zero = String::from_utf8_lossy(&msg.name);
-            let msg_name = msg_name_trailing_zero.trim_right_matches("\u{0}");
+            let msg_name = msg_name_trailing_zero.trim_end_matches("\u{0}");
             self.message_name_to_id.insert(msg_name.into(), msg.index);
             i = i + 1;
         }
