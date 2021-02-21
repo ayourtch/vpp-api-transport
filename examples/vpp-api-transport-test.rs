@@ -1,11 +1,6 @@
-use bincode::Options;
 use clap::Clap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::convert::TryInto;
-use std::io::{Read, Write};
-use std::time::{Duration, SystemTime};
-use vpp_api_transport::*;
+use std::time::SystemTime;
 
 /// This program is a minimum test of vpp-api-transport crate
 /// To make it somewhat useful, it can also bench the cli_inband API
@@ -38,20 +33,11 @@ struct Opts {
     verbose: i32,
 }
 
-fn get_encoder() -> impl bincode::config::Options {
-    bincode::DefaultOptions::new()
-        .with_big_endian()
-        .with_fixint_encoding()
-}
-
 use vpp_api_transport::afunix;
 use vpp_api_transport::shmem;
 use vpp_api_transport::VppApiTransport;
 
 fn bench(opts: &Opts, t: &mut dyn VppApiTransport) {
-    use std::thread::sleep;
-    use std::time::{Duration, SystemTime};
-
     let now = SystemTime::now();
     let mut last_show = now;
 
@@ -133,7 +119,7 @@ fn main() {
     };
 
     t.connect("api-test", None, 256).unwrap();
-    t.set_nonblocking(opts.nonblocking);
+    t.set_nonblocking(opts.nonblocking).unwrap();
     bench(&opts, &mut *t);
     t.disconnect();
 }
