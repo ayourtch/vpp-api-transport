@@ -197,7 +197,7 @@ pub trait VppApiTransport: Read + Write {
                 Err(e) => return Err(e),
                 Ok((msg_id, data)) => {
                     if msg_id == cli_inband_reply_id {
-                        println!("Message: {:?}", &data);
+                        // println!("Message: {:?}", &data);
                         let r: RawCliInbandReply = get_encoder().deserialize(&data).unwrap();
                         let v = match r.reply {
                             VarLen32::VarLenData(d) => d,
@@ -225,7 +225,7 @@ pub trait VppApiTransport: Read + Write {
         let mut got = 0;
         while got < target_size {
             let n = self.read(&mut data[got..target_size]).unwrap();
-            println!("Got: {}, n: {}, target_size: {}", got, n, target_size);
+            // println!("Got: {}, n: {}, target_size: {}", got, n, target_size);
             got = got + n;
         }
         Ok(())
