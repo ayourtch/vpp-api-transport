@@ -189,7 +189,7 @@ pub trait VppApiTransport: Read + Write {
             cmd: VarLen32::VarLenData(cmd.as_bytes().to_vec()),
         };
         let data = get_encoder().serialize(&msg).unwrap();
-        println!("Sending data: {:?}", &data);
+        // println!("Sending data: {:?}", &data);
         self.write(&data);
 
         loop {
@@ -203,7 +203,7 @@ pub trait VppApiTransport: Read + Write {
                             VarLen32::VarLenData(d) => d,
                         };
                         let s = String::from_utf8_lossy(&v);
-                        println!("Command reply: {}", &s);
+                        // println!("Command reply: {}", &s);
                         return Ok(s.to_string());
                     }
                 }
