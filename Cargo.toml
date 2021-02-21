@@ -1,6 +1,6 @@
 [package]
 name = "vpp-api-transport"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Andrew Yourtchenko <ayourtch@gmail.com>"]
 edition = "2018"
 description = "fd.io VPP API transport over shared memory and sockets"
