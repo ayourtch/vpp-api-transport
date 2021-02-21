@@ -18,7 +18,7 @@ struct GlobalState {
 
 lazy_static! {
     static ref GLOBAL: Arc<Mutex<GlobalState>> = {
-        let mut gs = GlobalState {
+        let gs = GlobalState {
             ..Default::default()
         };
 
@@ -41,7 +41,7 @@ fn get_encoder() -> impl bincode::config::Options {
 
 #[no_mangle]
 pub unsafe extern "C" fn shmem_default_cb(raw_data: *const u8, len: i32) {
-    let data_slice = unsafe { std::slice::from_raw_parts(raw_data, len as usize) };
+    let data_slice = std::slice::from_raw_parts(raw_data, len as usize);
     let mut gs = GLOBAL.lock().unwrap();
 
     let hdr = SockMsgHeader {
@@ -59,8 +59,8 @@ pub unsafe extern "C" fn shmem_default_cb(raw_data: *const u8, len: i32) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn vac_error_handler(arg: *const u8, msg: *const u8, msg_len: i32) {
-    println!("Error: {} bytes of message", msg_len);
+pub unsafe extern "C" fn vac_error_handler(_arg: *const u8, _msg: *const u8, _msg_len: i32) {
+    println!("Error: {} bytes of message", _msg_len);
 }
 
 pub struct Transport {
@@ -115,6 +115,12 @@ impl std::io::Write for Transport {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let wr_len = buf.len();
         let err = unsafe { vac_write(buf.as_ptr(), wr_len as i32) };
+        if err < 0 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("vac_write returned {}", err),
+            ));
+        }
         Ok(wr_len)
     }
     fn flush(&mut self) -> std::io::Result<()> {
@@ -154,7 +160,7 @@ impl VppApiTransport for Transport {
     }
     fn disconnect(&mut self) {
         if self.connected {
-            let err = unsafe { vac_disconnect() };
+            let _ = unsafe { vac_disconnect() };
             self.connected = false;
         }
     }
@@ -179,7 +185,7 @@ impl VppApiTransport for Transport {
         0
     }
     fn dump(&self) {
-        let mut gs = GLOBAL.lock().unwrap();
+        let gs = GLOBAL.lock().unwrap();
         println!("Global state: {:?}", &gs);
     }
 }

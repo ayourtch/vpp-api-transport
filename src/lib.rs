@@ -55,7 +55,7 @@ impl Serialize for VarLen32 {
             VarLen32::VarLenData(v) => v,
         };
 
-        let mut len = data.len();
+        let len = data.len();
         let mut seq = serializer.serialize_tuple(len + 4)?;
         let b0: u8 = (len >> 24) as u8;
         let b1: u8 = ((len >> 16) & 0xff) as u8;
@@ -97,7 +97,7 @@ impl<'de> Deserialize<'de> for VarLen32 {
                     .next_element()?
                     .ok_or_else(|| serde::de::Error::invalid_length(1, &self))?;
 
-                for i in 0..length {
+                for _i in 0..length {
                     res.push(
                         seq.next_element()?
                             .ok_or_else(|| serde::de::Error::invalid_length(1, &self))?,
@@ -176,8 +176,6 @@ pub trait VppApiTransport: Read + Write {
     }
 
     fn run_cli_inband(&mut self, cmd: &str) -> std::io::Result<String> {
-        use std::io::Write;
-
         let cli_inband_id = self.get_msg_index("cli_inband_f8377302").unwrap();
         let cli_inband_reply_id = self.get_msg_index("cli_inband_reply_05879051").unwrap();
 

@@ -21,7 +21,7 @@ struct GlobalState {
 
 lazy_static! {
     static ref GLOBAL: Arc<Mutex<GlobalState>> = {
-        let mut gs = GlobalState {
+        let gs = GlobalState {
             ..Default::default()
         };
 
@@ -120,12 +120,12 @@ impl VppApiTransport for Transport {
     fn connect(
         &mut self,
         name: &str,
-        chroot_prefix: Option<&str>,
-        rx_qlen: i32,
+        _chroot_prefix: Option<&str>,
+        _rx_qlen: i32,
     ) -> std::io::Result<()> {
         use std::io::Write;
 
-        let mut s = UnixStream::connect(&self.sock_path)?;
+        let s = UnixStream::connect(&self.sock_path)?;
         self.sock = Some(s);
         self.connected = true;
 
@@ -145,7 +145,6 @@ impl VppApiTransport for Transport {
 
         let scs = get_encoder().serialize(&sockclnt_create).unwrap();
 
-        let mut s = self.sock.as_ref().unwrap();
         self.write(&scs)?;
         let buf = self.read_one_msg()?;
         let hdr: MsgSockClntCreateReplyHdr = get_encoder().deserialize(&buf[0..20]).unwrap();
@@ -193,7 +192,7 @@ impl VppApiTransport for Transport {
         0
     }
     fn dump(&self) {
-        let mut gs = GLOBAL.lock().unwrap();
+        let gs = GLOBAL.lock().unwrap();
         println!("Global state: {:?}", &gs);
     }
 }
