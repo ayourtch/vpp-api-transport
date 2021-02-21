@@ -12,6 +12,21 @@ fn find_vpp_lib_dir() -> String {
     path
 }
 
+fn git_version() -> String {
+    use std::process::Command;
+
+    let describe_output = Command::new("git")
+        .arg("describe")
+        .arg("--all")
+        .arg("--long")
+        .output()
+        .unwrap();
+
+    let mut describe = String::from_utf8_lossy(&describe_output.stdout).to_string();
+    describe.pop();
+    describe
+}
+
 fn main() {
     let vpp_lib_dir = match env::var("VPP_LIB_DIR") {
         Ok(val) => val,
@@ -24,6 +39,8 @@ fn main() {
 
     // Tell cargo to tell rustc to link the VPP client library
     println!("{}", flags);
+
+    println!("cargo:rustc-env=GIT_VERSION=version {}", &git_version());
 
     let bindings = bindgen::Builder::default()
         .header("src/shmem_wrapper.h")
