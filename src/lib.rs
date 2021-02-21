@@ -146,7 +146,7 @@ pub trait VppApiTransport: Read + Write {
         42
     }
 
-    fn control_ping(&mut self) -> u32 {
+    fn control_ping(&mut self) -> std::io::Result<u32> {
         let control_ping_id = self.get_msg_index("control_ping_51077d14").unwrap();
         use std::io::Write;
         let context = self.get_next_context();
@@ -156,8 +156,8 @@ pub trait VppApiTransport: Read + Write {
             context,
         };
         let data = get_encoder().serialize(&msg).unwrap();
-        self.write(&data);
-        context
+        self.write(&data)?;
+        Ok(context)
     }
 
     fn skip_to_control_ping_reply(&mut self, context: u32) -> std::io::Result<()> {
@@ -190,7 +190,7 @@ pub trait VppApiTransport: Read + Write {
         };
         let data = get_encoder().serialize(&msg).unwrap();
         // println!("Sending data: {:?}", &data);
-        self.write(&data);
+        self.write(&data)?;
 
         loop {
             match self.read_one_msg_id_and_msg() {
