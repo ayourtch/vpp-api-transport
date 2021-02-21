@@ -117,56 +117,54 @@ pub struct MsgSockClntCreateReplyEntry {
 }
 
 impl VppApiTransport for Transport {
-    fn connect(&mut self, name: &str, chroot_prefix: Option<&str>, rx_qlen: i32) -> i32 {
+    fn connect(
+        &mut self,
+        name: &str,
+        chroot_prefix: Option<&str>,
+        rx_qlen: i32,
+    ) -> std::io::Result<()> {
         use std::io::Write;
 
-        let mut sock = UnixStream::connect(&self.sock_path);
-        if let Ok(s) = sock {
-            self.sock = Some(s);
-            println!("Open success!");
-            self.connected = true;
+        let mut s = UnixStream::connect(&self.sock_path)?;
+        self.sock = Some(s);
+        self.connected = true;
 
-            /* FIXME: this is ugly and odd, there's gotta be a better way... */
-            let mut name1 = name.to_string();
-            let mut name_a: [u8; 64] = [0; 64];
-            while name1.len() < name_a.len() {
-                name1.push('\0');
-            }
-            name_a.copy_from_slice(&name1.as_bytes());
-
-            let sockclnt_create = MsgSockClntCreate {
-                _vl_msg_id: 15,
-                context: 124,
-                name: name_a,
-            };
-
-            let scs = get_encoder().serialize(&sockclnt_create).unwrap();
-
-            let mut s = self.sock.as_ref().unwrap();
-            self.write(&scs);
-            let buf = self.read_one_msg().unwrap();
-            let hdr: MsgSockClntCreateReplyHdr = get_encoder().deserialize(&buf[0..20]).unwrap();
-            self.client_index = hdr.index as u32;
-            println!("Table: {:?}", &hdr);
-            let mut i = 0;
-            self.message_max_index = hdr.count;
-            while i < hdr.count as usize {
-                let sz = 66; /* MsgSockClntCreateReplyEntry */
-                let ofs1 = 20 + i * 66;
-                let ofs2 = ofs1 + sz;
-
-                let msg: MsgSockClntCreateReplyEntry =
-                    get_encoder().deserialize(&buf[ofs1..ofs2]).unwrap();
-                let msg_name_trailing_zero = String::from_utf8_lossy(&msg.name);
-                let msg_name = msg_name_trailing_zero.trim_right_matches("\u{0}");
-                self.message_name_to_id.insert(msg_name.into(), msg.index);
-                i = i + 1;
-            }
-
-            return 0;
+        /* FIXME: this is ugly and odd, there's gotta be a better way... */
+        let mut name1 = name.to_string();
+        let mut name_a: [u8; 64] = [0; 64];
+        while name1.len() < name_a.len() {
+            name1.push('\0');
         }
-        eprintln!("Error: {:?}", &sock);
-        return -1;
+        name_a.copy_from_slice(&name1.as_bytes());
+
+        let sockclnt_create = MsgSockClntCreate {
+            _vl_msg_id: 15,
+            context: 124,
+            name: name_a,
+        };
+
+        let scs = get_encoder().serialize(&sockclnt_create).unwrap();
+
+        let mut s = self.sock.as_ref().unwrap();
+        self.write(&scs);
+        let buf = self.read_one_msg()?;
+        let hdr: MsgSockClntCreateReplyHdr = get_encoder().deserialize(&buf[0..20]).unwrap();
+        self.client_index = hdr.index as u32;
+        let mut i = 0;
+        self.message_max_index = hdr.count;
+        while i < hdr.count as usize {
+            let sz = 66; /* MsgSockClntCreateReplyEntry */
+            let ofs1 = 20 + i * 66;
+            let ofs2 = ofs1 + sz;
+
+            let msg: MsgSockClntCreateReplyEntry =
+                get_encoder().deserialize(&buf[ofs1..ofs2]).unwrap();
+            let msg_name_trailing_zero = String::from_utf8_lossy(&msg.name);
+            let msg_name = msg_name_trailing_zero.trim_right_matches("\u{0}");
+            self.message_name_to_id.insert(msg_name.into(), msg.index);
+            i = i + 1;
+        }
+        Ok(())
     }
     fn disconnect(&mut self) {
         if self.connected {

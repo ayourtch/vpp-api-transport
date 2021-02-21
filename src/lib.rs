@@ -128,7 +128,12 @@ struct RawCliInbandReply {
 }
 
 pub trait VppApiTransport: Read + Write {
-    fn connect(&mut self, name: &str, chroot_prefix: Option<&str>, rx_qlen: i32) -> i32;
+    fn connect(
+        &mut self,
+        name: &str,
+        chroot_prefix: Option<&str>,
+        rx_qlen: i32,
+    ) -> std::io::Result<()>;
     fn disconnect(&mut self);
     fn set_nonblocking(&mut self, nonblocking: bool) -> std::io::Result<()>;
 

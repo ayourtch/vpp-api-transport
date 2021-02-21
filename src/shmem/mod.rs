@@ -124,7 +124,12 @@ impl std::io::Write for Transport {
 }
 
 impl VppApiTransport for Transport {
-    fn connect(&mut self, name: &str, chroot_prefix: Option<&str>, rx_qlen: i32) -> i32 {
+    fn connect(
+        &mut self,
+        name: &str,
+        chroot_prefix: Option<&str>,
+        rx_qlen: i32,
+    ) -> std::io::Result<()> {
         use std::ffi::CString;
 
         let name_c = CString::new(name).unwrap();
@@ -138,11 +143,14 @@ impl VppApiTransport for Transport {
         };
         let err =
             unsafe { vac_connect(name_arg, chroot_prefix_arg, Some(shmem_default_cb), rx_qlen) };
-        if err == 0 {
-            self.connected = true;
+        if err < 0 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("vac_connect returned {}", err),
+            ));
         }
-        println!("Returning {}", err);
-        return err;
+        self.connected = true;
+        Ok(())
     }
     fn disconnect(&mut self) {
         if self.connected {

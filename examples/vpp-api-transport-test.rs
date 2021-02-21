@@ -132,7 +132,7 @@ fn main() {
         Box::new(shmem::Transport::new())
     };
 
-    println!("Connect result: {}", t.connect("api-test", None, 256));
+    t.connect("api-test", None, 256).unwrap();
     t.set_nonblocking(opts.nonblocking);
     bench(&opts, &mut *t);
     t.disconnect();
