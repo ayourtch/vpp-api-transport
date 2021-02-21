@@ -177,8 +177,8 @@ impl VppApiTransport for Transport {
     fn get_client_index(&mut self) -> u32 {
         self.client_index
     }
-    fn get_msg_index(&mut self, name: &str) -> u16 {
-        *self.message_name_to_id.get(name).unwrap()
+    fn get_msg_index(&mut self, name: &str) -> Option<u16> {
+        self.message_name_to_id.get(name).map(|x| x.to_owned())
     }
     fn get_table_max_index(&mut self) -> u16 {
         0

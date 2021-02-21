@@ -43,7 +43,6 @@ struct RawControlPingReply {
     vpe_pid: u32,
 }
 
-
 /* This is a pretty hacky way to convince bincode, but oh well... */
 #[derive(Debug, Clone)]
 enum VarLen32 {
@@ -137,7 +136,7 @@ pub trait VppApiTransport: Read + Write {
     fn connect(&mut self, name: &str, chroot_prefix: Option<&str>, rx_qlen: i32) -> i32;
     fn disconnect(&mut self);
 
-    fn get_msg_index(&mut self, name: &str) -> u16;
+    fn get_msg_index(&mut self, name: &str) -> Option<u16>;
     fn get_table_max_index(&mut self) -> u16;
     fn get_client_index(&mut self) -> u32;
 
@@ -147,7 +146,7 @@ pub trait VppApiTransport: Read + Write {
     }
 
     fn control_ping(&mut self) -> u32 {
-        let control_ping_id = self.get_msg_index("control_ping_51077d14");
+        let control_ping_id = self.get_msg_index("control_ping_51077d14").unwrap();
         use std::io::Write;
         let context = self.get_next_context();
         let msg = RawControlPing {
@@ -161,7 +160,7 @@ pub trait VppApiTransport: Read + Write {
     }
 
     fn skip_to_control_ping_reply(&mut self, context: u32) -> Result<(), Error> {
-        let control_ping_reply_id = self.get_msg_index("control_ping_reply_f6b0b8ca");
+        let control_ping_reply_id = self.get_msg_index("control_ping_reply_f6b0b8ca").unwrap();
         loop {
             match self.read_one_msg_id_and_msg() {
                 Err(e) => return Err(e),
@@ -178,8 +177,8 @@ pub trait VppApiTransport: Read + Write {
     fn run_cli_inband(&mut self, cmd: &str) -> Result<String, Error> {
         use std::io::Write;
 
-        let cli_inband_id = self.get_msg_index("cli_inband_f8377302");
-        let cli_inband_reply_id = self.get_msg_index("cli_inband_reply_05879051");
+        let cli_inband_id = self.get_msg_index("cli_inband_f8377302").unwrap();
+        let cli_inband_reply_id = self.get_msg_index("cli_inband_reply_05879051").unwrap();
 
         let context = self.get_next_context();
         let msg = RawCliInband {
