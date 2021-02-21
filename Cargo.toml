@@ -14,9 +14,8 @@ homepage = "https://wiki.fd.io/view/VPP"
 name = "vpp_api_transport"
 path = "src/lib.rs"
 
-[[bin]]
+[[example]]
 name = "vpp-api-transport-test"
-path = "src/vpp-api-transport-test.rs"
 
 [dependencies]
 lazy_static = "1.4.0"
