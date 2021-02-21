@@ -132,7 +132,7 @@ impl VppApiTransport for Transport {
         }
     }
 
-    fn get_client_index(&mut self) -> u32 {
+    fn get_client_index(&self) -> u32 {
         0
     }
     fn get_msg_index(&mut self, name: &str) -> Option<u16> {

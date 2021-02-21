@@ -138,7 +138,7 @@ pub trait VppApiTransport: Read + Write {
 
     fn get_msg_index(&mut self, name: &str) -> Option<u16>;
     fn get_table_max_index(&mut self) -> u16;
-    fn get_client_index(&mut self) -> u32;
+    fn get_client_index(&self) -> u32;
 
     fn get_next_context(&mut self) -> u32 {
         // FIXME: use atomic autoincrementing
