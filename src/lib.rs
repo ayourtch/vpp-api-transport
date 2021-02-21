@@ -193,7 +193,7 @@ pub trait VppApiTransport: Read + Write {
 
         loop {
             match self.read_one_msg_id_and_msg() {
-                Err(Error::NoDataAvailable) => { /* busy-loop */ },
+                Err(Error::NoDataAvailable) => { /* busy-loop */ }
                 Err(e) => return Err(e),
                 Ok((msg_id, data)) => {
                     if msg_id == cli_inband_reply_id {

@@ -65,6 +65,7 @@ pub unsafe extern "C" fn vac_error_handler(arg: *const u8, msg: *const u8, msg_l
 
 pub struct Transport {
     connected: bool,
+    non_blocking: bool,
 }
 
 impl Transport {
@@ -77,14 +78,21 @@ impl Transport {
         gs.created = true;
 
         unsafe { vac_mem_init(0) };
-        Transport { connected: false }
+        Transport {
+            connected: false,
+            non_blocking: false,
+        }
     }
-}
 
-impl std::io::Read for Transport {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+    fn read_simple(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         let mut gs = GLOBAL.lock().unwrap();
         let mut count = 0;
+        if self.non_blocking && buf.len() > gs.receive_buffer.len() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::WouldBlock,
+                "non blocking socket would block",
+            ));
+        }
         while count < buf.len() && gs.receive_buffer.len() > 0 {
             buf[count] = gs.receive_buffer.pop_front().unwrap();
             count = count + 1
@@ -92,6 +100,17 @@ impl std::io::Read for Transport {
         Ok(count)
     }
 }
+
+impl std::io::Read for Transport {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        let mut count = 0;
+        while count < buf.len() {
+            count = count + self.read_simple(&mut buf[count..])?;
+        }
+        return Ok(count);
+    }
+}
+
 impl std::io::Write for Transport {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let wr_len = buf.len();
