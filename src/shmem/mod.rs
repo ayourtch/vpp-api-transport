@@ -65,7 +65,7 @@ pub unsafe extern "C" fn vac_error_handler(arg: *const u8, msg: *const u8, msg_l
 
 pub struct Transport {
     connected: bool,
-    non_blocking: bool,
+    nonblocking: bool,
 }
 
 impl Transport {
@@ -80,17 +80,17 @@ impl Transport {
         unsafe { vac_mem_init(0) };
         Transport {
             connected: false,
-            non_blocking: false,
+            nonblocking: false,
         }
     }
 
     fn read_simple(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         let mut gs = GLOBAL.lock().unwrap();
         let mut count = 0;
-        if self.non_blocking && buf.len() > gs.receive_buffer.len() {
+        if self.nonblocking && buf.len() > gs.receive_buffer.len() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::WouldBlock,
-                "non blocking socket would block",
+                "nonblocking socket would block",
             ));
         }
         while count < buf.len() && gs.receive_buffer.len() > 0 {
@@ -149,6 +149,10 @@ impl VppApiTransport for Transport {
             let err = unsafe { vac_disconnect() };
             self.connected = false;
         }
+    }
+    fn set_nonblocking(&mut self, nonblocking: bool) -> std::io::Result<()> {
+        self.nonblocking = nonblocking;
+        Ok(())
     }
 
     fn get_client_index(&self) -> u32 {

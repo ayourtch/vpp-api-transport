@@ -174,6 +174,17 @@ impl VppApiTransport for Transport {
             self.connected = false;
         }
     }
+    fn set_nonblocking(&mut self, nonblocking: bool) -> std::io::Result<()> {
+        if let Some(ref mut s) = self.sock {
+            s.set_nonblocking(nonblocking)
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::NotConnected,
+                "trying to set unconnected socket non-blocking",
+            ))
+        }
+    }
+
     fn get_client_index(&self) -> u32 {
         self.client_index
     }

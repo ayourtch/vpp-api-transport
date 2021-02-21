@@ -135,6 +135,7 @@ struct RawCliInbandReply {
 pub trait VppApiTransport: Read + Write {
     fn connect(&mut self, name: &str, chroot_prefix: Option<&str>, rx_qlen: i32) -> i32;
     fn disconnect(&mut self);
+    fn set_nonblocking(&mut self, nonblocking: bool) -> std::io::Result<()>;
 
     fn get_msg_index(&mut self, name: &str) -> Option<u16>;
     fn get_table_max_index(&mut self) -> u16;
