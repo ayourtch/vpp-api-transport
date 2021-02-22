@@ -34,4 +34,10 @@ jobs:
     - name: Build and test the code
       run: |
         cargo test
+    - name: benchmark the client over socket
+      run: |
+        cargo run --release --example vpp-api-transport-test -- -r 1000 -s /run/vpp/api.sock
+    - name: benchmark the client over shared memory
+      run: |
+        cargo run --release --example vpp-api-transport-test -- -r 1000
 
