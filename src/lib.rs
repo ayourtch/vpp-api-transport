@@ -255,7 +255,7 @@ mod tests {
     fn test_shmem_connect() {
         let mut t1 = shmem::Transport::new();
         let res = t1.connect("test", None, 32);
-        assert_eq!(res, 0);
+        assert!(res.is_ok(), "Should be able to connect over shmem");
         t1.disconnect();
         drop(t1);
     }
@@ -264,12 +264,17 @@ mod tests {
     fn test_afunix_connect() {
         let mut t1 = afunix::Transport::new("/run/vpp/api.sock");
         let res = t1.connect("test", None, 32);
-        assert_eq!(res, 0);
+        assert!(res.is_ok(), "Should be able to connect over afunix");
         let context = t1.control_ping();
+        assert!(context.is_ok(), "Should return the context");
+        let context = context.unwrap();
         let res = t1.skip_to_control_ping_reply(context);
-        assert_eq!(res, Ok(()));
+        assert!(
+            res.is_ok(),
+            "Should skip up to the matching ping reply and consume it"
+        );
         let s = t1.run_cli_inband("show version");
-        assert!(s.is_ok());
+        assert!(s.is_ok(), "should be able to run a CLI");
         let s = s.unwrap();
         assert!(s.starts_with("vpp "));
         t1.disconnect();
