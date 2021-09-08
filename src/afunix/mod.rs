@@ -52,7 +52,9 @@ impl Transport {
             panic!("One transport already created!");
         }
 
-        gs.created = true;
+        // It's technically okay to have multiple transports for unix socket
+        // The tests make use of this ability to parallelize
+        // gs.created = true;
 
         Transport {
             connected: false,
