@@ -65,6 +65,13 @@ impl Transport {
     }
 }
 
+impl Drop for Transport {
+    fn drop(&mut self) {
+        let mut gs = GLOBAL.lock().unwrap();
+        gs.created = false;
+    }
+}
+
 impl std::io::Read for Transport {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         self.sock.as_ref().unwrap().read(buf)
