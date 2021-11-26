@@ -53,8 +53,10 @@ impl Transport {
         }
 
         // It's technically okay to have multiple transports for unix socket
-        // The tests make use of this ability to parallelize
-        // gs.created = true;
+        // The tests can make use of this ability to parallelize
+        // But to retain the compatibility with the shared memory transport,
+        // we keep this (simplistic) lock here for now
+        gs.created = true;
 
         Transport {
             connected: false,
