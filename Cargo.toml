@@ -21,7 +21,7 @@ name = "vpp-api-transport-test"
 lazy_static = "1.4.0"
 serde = { version = "1.0", features = ["derive"] }
 bincode = "1.2.1"
-vpp-api-message = "*"
+vpp-api-message = "0.0.1"
 
 [dev-dependencies]
 serde_json = "1.0"
