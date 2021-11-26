@@ -5,6 +5,8 @@ extern crate lazy_static;
 mod macros;
 pub mod afunix;
 pub mod shmem;
+// Interactions. May be evicted later on...
+pub mod reqrecv;
 use bincode;
 use bincode::Options;
 use serde::{Deserialize, Serialize};
