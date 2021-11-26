@@ -1,11 +1,11 @@
-use clap::Clap;
+use clap::Parser as ClapParser;
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 
 /// This program is a minimum test of vpp-api-transport crate
 /// To make it somewhat useful, it can also bench the cli_inband API
 /// execution time for various commands
-#[derive(Debug, Clone, Clap, Serialize, Deserialize)]
+#[derive(Debug, Clone, ClapParser, Serialize, Deserialize)]
 #[clap(version = env!("GIT_VERSION"), author = "Andrew Yourtchenko <ayourtch@gmail.com>")]
 struct Opts {
     /// Run the bench using this CLI, else use "show version"
